@@ -1,0 +1,54 @@
+name: Build Feedback pdf
+
+on: [push]
+
+jobs:
+  file_existence:
+    name: Check if feedback html file exits
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.check_files.outputs.files_exists }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check file existence
+        id: check_files
+        uses: andstor/file-existence-action@v2
+        with:
+          files: "ads_assignment_3.html"
+
+  html_to_pdf:
+    name: Generate PDF
+    needs: [file_existence]
+    if: needs.file_existence.outputs.status == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    permissions:
+      contents: write  
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: html to pdf
+        uses: LukaszLapaj/html-to-pdf-action@master
+        with:
+          htmlFile: ./ads_assignment_3.html
+          outputFile: ./feedback.pdf
+          pdfOptions: '{"margin": {"top": "1px", "left": "100px", "right": "100px", "bottom": "100px"}}'
+          
+      - name: update file and push to remote
+        run: |
+         git config --local user.email "action@github.com"
+         git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Update feedback.pdf"
+          git push
+
+  
